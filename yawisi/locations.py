@@ -46,11 +46,13 @@ class Points(Locations):
 
 class Grid(Locations):
 
-    def __init__(self, width, height, nx, ny) -> None:
+    def __init__(self, ny, nz, ymin, ymax, zmin, zmax) -> None:
         super().__init__()
-
-        self.dims = np.array([nx, ny])
-        self.size = np.array([width, height])
+        self.ori = np.array([ymin, zmin])
+        self.dims = np.array([ny, nz])
+        ## if ymin = ymax or zmin = zmax 
+        self.size = np.array([(ymax-ymin), (zmax-zmin)])
+        # self.size = np.array([width, height])
        
         self._make_points()
         
@@ -69,15 +71,20 @@ class Grid(Locations):
                 self.points[self._index(i, j), 0] = y[i]
                 self.points[self._index(i, j), 1] = z[i]
     
+
+
     def _make_points(self):
         self.points = np.zeros(shape=(self.dims[0]*self.dims[1], 2), dtype=np.float64)
-        sxy = self.size / (self.dims - 1)
-        ori = - self.size / 2
-        pos = np.zeros(shape=ori.shape)
+        # sxy = self.size // self.dims
+
+        dimsm = np.array([max(self.dims[0]-1, 1), max(self.dims[1]-1, 1)])
+        sxy = self.size / dimsm
+        # ori = - self.size / 2
+        pos = np.zeros(shape=self.ori.shape)
         for i in range(self.dims[0]):
-            pos[0] = i*sxy[0] + ori[0]
+            pos[0] = i*sxy[0] + self.ori[0]
             for j in range(self.dims[1]):
-                pos[1] = j*sxy[1] + ori[1]
+                pos[1] = j*sxy[1] + self.ori[1]
                 self.points[self._index(i, j), :] = pos
 
 

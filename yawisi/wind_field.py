@@ -16,10 +16,12 @@ class WindField:
         self.params: SimulationParameters = params #Def des parametres de simulation pour le Wind Field
         self.coherence_kernel = CoherenceKernel()
         self.locations: Locations = Locations.create("grid", 
-                                                  width=self.params.grid_width, 
-                                                  height=self.params.grid_height, 
-                                                  nx=self.params.grid_length, 
-                                                  ny=self.params.grid_length
+                                                  ny=self.params.ny, 
+                                                  nz=self.params.nz, 
+                                                  ymin=self.params.ymin,
+                                                  ymax=self.params.ymax,
+                                                  zmin=self.params.zmin, 
+                                                  zmax=self.params.zmax
                                                   ) 
         self.wind=[]   #Objets vent contenus dans le champ
 

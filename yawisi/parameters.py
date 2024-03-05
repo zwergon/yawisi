@@ -20,9 +20,15 @@ class SimulationParameters:
         self.reference_height = (
             80  # Lecture de la hauteur de reference du champ de vent
         )
-        self.grid_width = 100
-        self.grid_height = 100
-        self.grid_length = 11
+        self.ny = 10
+        self.nz = 10
+        self.zmin = 0
+        self.zmax = 60
+        self.ymin = 0
+        self.ymax = 100
+        # self.grid_width = 100
+        # self.grid_height = 100
+        # self.grid_length = 11
 
         if filename is not None:
             self.__parse_ini(filename)
@@ -49,9 +55,15 @@ class SimulationParameters:
         field = config["Field"]
         self.vertical_shear = float(field.get("vertical_shear", self.vertical_shear))
         self.reference_height = float(field.get("hub_height", self.reference_height))
-        self.grid_width = float(field.get("grid_width", self.grid_width))
-        self.grid_height = float(field.get("grid_heigth", self.grid_height))
-        self.grid_length = int(field.get("grid_length", self.grid_length))
+        self.ny = int(field.get("Ny", self.ny))
+        self.nz = int(field.get("Nz", self.nz))
+        self.ymin = float(field.get("Ymin", self.ymin))
+        self.ymax = float(field.get("Ymax", self.ymax))
+        self.zmin = float(field.get("Zmin", self.zmin))
+        self.zmax = float(field.get("Zmax", self.zmax))
+        # self.grid_width = float(field.get("grid_width", self.grid_width))
+        # self.grid_height = float(field.get("grid_heigth", self.grid_height))
+        # self.grid_length = int(field.get("grid_length", self.grid_length))
 
     @property
     def total_time(self):
@@ -77,7 +89,11 @@ class SimulationParameters:
         msg += f"std of wind fluctuation of the vertical component @ {self.sigma_3}\n"
         msg += f"PL Exp Law initialized  @ {self.vertical_shear}\n"
         msg += f"Reference Height @ {self.reference_height}\n"
-        msg += f"Grid Width @ {self.grid_width}\n"
-        msg += f"Grid Height @ {self.grid_width}\n"
-        msg += f"Grid Length @ {self.grid_length}\n"
+        msg += f"Ymin @ {self.ymin}\n"
+        msg += f"Ymax @ {self.ymax}\n"
+        msg += f"Zmin @ {self.zmin}\n"
+        msg += f"Zmax @ {self.zmax}\n"        
+        # msg += f"Grid Width @ {self.grid_width}\n"
+        # msg += f"Grid Height @ {self.grid_width}\n"
+        # msg += f"Grid Length @ {self.grid_length}\n"
         return msg
