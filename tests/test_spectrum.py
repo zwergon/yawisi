@@ -16,21 +16,30 @@ class TestSpectrum(unittest.TestCase):
         filename = os.path.join(os.path.dirname(__file__), "config.ini")
 
         params = SimulationParameters(filename)
-        params.n_samples = 1024
+        params.n_samples = 10000
         params.sample_time = 0.05
         spectrum = Spectrum(params)
 
-        freq, array = spectrum.freq, spectrum.array
-
-        df = freq[1] - freq[0]
+        _, array = spectrum.freq, spectrum.array
 
         print(array.shape)
-        print(np.sqrt(df * np.sum(array, axis=0)))
+        print(np.sqrt(spectrum.df * np.sum(array, axis=0)))
 
         display_spectrum(spectrum)
 
-        plt.plot(spectrum.symetrized(0))
-        plt.show()
+    def test_symetrized(self):
+        params = SimulationParameters(None)
+        params.n_samples = 64
+        params.sample_time = 0.05
+
+        spectrum = Spectrum(params)
+        symetrized = spectrum.symetrized(0)
+        # plt.plot(symetrized.real)
+        # plt.plot(symetrized.imag)
+        # plt.show()
+
+        signal = np.fft.ifft(symetrized)
+        print(f"real: {np.std(signal.real)}, imaginary : {np.mean(signal.imag)}")
 
 
 if __name__ == "__main__":

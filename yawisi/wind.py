@@ -54,10 +54,10 @@ class Wind:
         # Multiplication du spectre de la seed, par le spectre (discret) du vent
         # Le spectre est defini comme le spectre original auquel s'ajoute son symetrique
         # pour pouvoir obtenir un spectre discret
+
         for i in range(self.wind_mean.shape[0]):
             wind_spectrum = np.multiply(fft_seed[:, i], spectrum.symetrized(i))
             self.wind_values[:, i] = (
-                np.abs(np.fft.ifft(wind_spectrum))
-                * np.sqrt(N / self.params.sample_time)
+                np.real(np.fft.ifft(wind_spectrum, norm="ortho") * spectrum.df)
                 + self.wind_mean[i]
             )

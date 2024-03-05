@@ -18,9 +18,9 @@ def display_spectrum(spectrum: Spectrum):
     fig.suptitle(f"Spectre du vent {spectrum.params.kind}", fontsize=20)
     plt.xlabel("Frequence (Hz)", fontsize=18)
     plt.ylabel("Spectre", fontsize=16)
-    plt.plot(freq, array[:, 0], label="Wx")
-    plt.plot(freq, array[:, 1], label="Wy")
-    plt.plot(freq, array[:, 2], label="Wz")
+    plt.plot(freq[1:], array[1:, 0], label="Wx")
+    plt.plot(freq[1:], array[1:, 1], label="Wy")
+    plt.plot(freq[1:], array[1:, 2], label="Wz")
     plt.legend()
     plt.show()
 

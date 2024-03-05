@@ -15,9 +15,19 @@ class Spectrum:
 
         self.freq, self.array = self._compute(params.n_samples, params.sample_time)
 
+    @property
+    def df(self):
+        return self.freq[1] - self.freq[0]
+
+    @property
+    def N_freq(self):
+        return len(self.freq)
+
     def symetrized(self, i):
-        one_d = self.array[:, i]
-        return np.hstack([one_d, one_d[::-1]])
+        one_d = self.array[:, i].astype(np.complex64)
+        return np.hstack(
+            [[0], one_d[:-1], np.real(one_d[-1]), np.conjugate(one_d[-2::-1])]
+        )
 
     def _sampling_params(self, N, dt):
         fs = 1 / dt

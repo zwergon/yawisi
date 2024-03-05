@@ -14,7 +14,7 @@ class TestWind(unittest.TestCase):
     def test_wind(self):
         filename = os.path.join(os.path.dirname(__file__), "config.ini")
         params = SimulationParameters(filename)
-        params.n_samples = 1024
+        params.n_samples = 4096
         params.sample_time = 0.05
         print(params)
 
@@ -25,7 +25,12 @@ class TestWind(unittest.TestCase):
         mean_u = np.mean(u)
 
         std_u = np.std(u - mean_u)
-        print(mean_u, std_u)
+        print(
+            mean_u,
+            std_u,
+            std_u * np.sqrt(params.sample_time),
+            std_u / params.sigma_1,
+        )
 
         display_wind(wind)
 
