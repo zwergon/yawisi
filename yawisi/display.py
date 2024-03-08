@@ -32,7 +32,7 @@ def display_coherence_function(freq, coherence_function):
     plt.show()
 
 
-def display_wind(wind: Wind):
+def display_wind(wind: Wind, end=-1):
     # Cette fonction permet d'afficher le signal de vent contenu dans l'objet.
     # Si le vent n'a pas ete initialise, on visualise 0 pour tous les echantillons
 
@@ -43,9 +43,9 @@ def display_wind(wind: Wind):
     # print self.WindValues
     # print self.WindValues[0,:]
     fig.suptitle("Vent genere", fontsize=20)
-    ax.plot(time, wind.wind_values[:, 0], label="wx")
-    ax.plot(time, wind.wind_values[:, 1], label="wy")
-    ax.plot(time, wind.wind_values[:, 2], label="wz")
+    ax.plot(time[:end], wind.wind_values[:end, 0], label="wx")
+    ax.plot(time[:end], wind.wind_values[:end, 1], label="wy")
+    ax.plot(time[:end], wind.wind_values[:end, 2], label="wz")
     plt.ylabel("Vent en m/s")
     plt.xlabel("Temps")
     plt.legend()

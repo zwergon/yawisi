@@ -11,15 +11,6 @@ class Wind:
     a partir de la classe spectre, ou par la fonction du champ de vent.
     """
 
-    @staticmethod
-    def get_initial_fftseed(N):
-        fft_seed = np.zeros(shape=(N, 3), dtype=np.complex64)
-        # fft avec mise à zero de la moyenne de la seed
-        for i in range(fft_seed.shape[1]):
-            seed = np.random.normal(size=(N,))
-            fft_seed[:, i] = np.fft.fft(seed - np.mean(seed))
-        return fft_seed
-
     def __init__(self, params: SimulationParameters):
         # initialisation des seeds a  0 et du vent a 0
         self.params = params
@@ -40,24 +31,29 @@ class Wind:
         # plt.show()
         pass
 
-    def compute(self, fft_seed=None, spectrum=None):
-        N = self.params.n_samples
-
+    def compute(self):
         # Création d'un spectre si aucun n'est donné.
-        if spectrum is None:
-            spectrum = Spectrum(self.params)
+        spectrum = Spectrum(self.params)
 
-        # initialisation des seeds si aucune n'est donnée en paramètre.
-        if fft_seed is None:
-            fft_seed = Wind.get_initial_fftseed(N)
+        # initialisation du bruit blanc - phase random entre [0, 2pi].
+        fft_seed = np.exp(
+            1.0j * np.random.uniform(0, 2 * np.pi, size=(spectrum.N_freq, 3))
+        )
 
         # Multiplication du spectre de la seed, par le spectre (discret) du vent
-        # Le spectre est defini comme le spectre original auquel s'ajoute son symetrique
-        # pour pouvoir obtenir un spectre discret
+        filtered = np.multiply(fft_seed, np.sqrt(spectrum.array.astype(np.complex128)))
 
-        for i in range(self.wind_mean.shape[0]):
-            wind_spectrum = np.multiply(fft_seed[:, i], spectrum.symetrized(i))
-            self.wind_values[:, i] = (
-                np.real(np.fft.ifft(wind_spectrum, norm="ortho") * spectrum.df)
-                + self.wind_mean[i]
-            )
+        # On a besoin de reconstruire un tableau représentant une fft réelle.
+        full = np.vstack(
+            [
+                np.zeros(shape=(1, 3)),
+                filtered[:-1, :],
+                np.real(filtered[-1, :]),
+                np.conjugate(filtered[-2::-1, :]),
+            ]
+        )
+        self.wind_values = (
+            np.real(np.fft.ifft(full, axis=0))
+            * np.sqrt(spectrum.N_freq / self.params.sample_time)
+            + self.wind_mean
+        )
