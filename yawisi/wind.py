@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from yawisi.parameters import SimulationParameters
 from yawisi.spectrum import Spectrum
+from yawisi.locations import SinglePoint
 
 
 class Wind:
@@ -40,8 +41,10 @@ class Wind:
             1.0j * np.random.uniform(0, 2 * np.pi, size=(spectrum.N_freq, 3))
         )
 
+        Sf = spectrum.compute_at_hub()
+
         # Multiplication du spectre de la seed, par le spectre (discret) du vent
-        filtered = np.multiply(fft_seed, np.sqrt(spectrum.array.astype(np.complex128)))
+        filtered = np.multiply(fft_seed, np.sqrt(Sf))
 
         # On a besoin de reconstruire un tableau représentant une fft réelle.
         full = np.vstack(

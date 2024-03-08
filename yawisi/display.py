@@ -7,20 +7,19 @@ from yawisi.locations import Grid
 from yawisi.wind import Wind
 
 
-def display_spectrum(spectrum: Spectrum):
+def display_spectrum(kind, freq, Sf):
     """
     Cette fonction permet de faire l'affichage du spectre
     """
 
-    freq, array = spectrum.freq, spectrum.array
-
     fig = plt.figure()
-    fig.suptitle(f"Spectre du vent {spectrum.params.kind}", fontsize=20)
-    plt.xlabel("Frequence (Hz)", fontsize=18)
-    plt.ylabel("Spectre", fontsize=16)
-    plt.plot(freq[1:], array[1:, 0], label="Wx")
-    plt.plot(freq[1:], array[1:, 1], label="Wy")
-    plt.plot(freq[1:], array[1:, 2], label="Wz")
+    fig.suptitle(f"Spectre du vent {kind}", fontsize=20)
+    plt.plot(freq, freq * Sf[:, 0], label="Wu")
+    plt.plot(freq, freq * Sf[:, 1], label="Wv")
+    plt.plot(freq, freq * Sf[:, 2], label="Ww")
+    plt.xscale("log")
+    plt.xlabel("freq(Hz)")
+    plt.ylabel(r"$ f \cdot S_{u} ( m^2 \cdot s^{-2})$")
     plt.legend()
     plt.show()
 

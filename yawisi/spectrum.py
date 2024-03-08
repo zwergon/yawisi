@@ -2,6 +2,7 @@ import numpy as np
 
 from yawisi.parameters import SimulationParameters
 from yawisi.kernels import Kaimal, Karman
+from yawisi.locations import Locations, SinglePoint
 
 
 class Spectrum:
@@ -13,7 +14,7 @@ class Spectrum:
         except KeyError as er:
             raise KeyError(f"spectrum {kind} unknown (only kaimal, karman)")
 
-        self.freq, self.array = self._compute(params.n_samples, params.sample_time)
+        self.freq = self._sampling_params(params.n_samples, params.sample_time)
 
     @property
     def df(self):
@@ -23,12 +24,6 @@ class Spectrum:
     def N_freq(self):
         return len(self.freq)
 
-    def symetrized(self, i):
-        one_d = self.array[:, i].astype(np.complex64)
-        return np.hstack(
-            [[0], one_d[:-1], np.real(one_d[-1]), np.conjugate(one_d[-2::-1])]
-        )
-
     def _sampling_params(self, N, dt):
         fs = 1 / dt
         tmax = N * dt
@@ -36,14 +31,15 @@ class Spectrum:
         fc = fs / 2  # Nyquist freq
         return np.arange(f0, fc + f0, f0)
 
-    def _compute(self, N, dt):
-        freq = self._sampling_params(N, dt)
-        array = np.zeros(shape=(len(freq), 3))
-        for i in range(3):
-            array[:, i] = self.kernel(freq, i)
+    def compute_at_hub(self):
+        hub = SinglePoint(z=self.params.reference_height)
+        Sf = self.compute(hub)
+        return Sf.squeeze(0)
 
-        # ensure \sigma_k^2 = \int_{f=0}^{\infty} S_k(f)
-        # df = 1 / (N * dt)
-        # array *= self.kernel.var_k / (df * np.sum(array, axis=0))
-
-        return freq, array
+    def compute(self, locations: Locations):
+        array = np.zeros(shape=(len(locations), self.N_freq, 3))
+        # TODO so far, kernels don't use location but it should !
+        for i_pt in range(len(locations)):
+            for i in range(3):
+                array[i_pt, :, i] = self.kernel(self.freq, i)
+        return array
