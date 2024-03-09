@@ -19,7 +19,6 @@ class WindField:
         self.params: SimulationParameters = (
             params  # Def des parametres de simulation pour le Wind Field
         )
-        self.coherence_kernel = CoherenceKernel()
         self.locations: Locations = Locations.create(
             "grid",
             ny=self.params.ny,
@@ -29,14 +28,15 @@ class WindField:
             zmin=self.params.zmin,
             zmax=self.params.zmax,
         )
-        self.wind = []  # Objets vent contenus dans le champ
+
+        self.winds = []  # Objets vent contenus dans le champ
 
     def get_umean(self):
         assert isinstance(self.locations, Grid), " can only generate for a grid"
         n_points = len(self.locations)
         # center of the grid is the location in the middle of the list
         pt = self.locations.points[n_points // 2, :]
-        wind = self.wind[n_points // 2]
+        wind = self.winds[n_points // 2]
         return wind.wind_values[:, 0].mean()
 
     def get_uvwt(self):
@@ -48,7 +48,7 @@ class WindField:
         ny, nz = grid.dims[0], grid.dims[1]
         nt = self.params.n_samples
         ts = np.empty((3, nt, ny, nz))
-        for idx, w in enumerate(self.wind):
+        for idx, w in enumerate(self.winds):
             i, j = grid.coords(idx)
             ts[:, :, i, j] = np.transpose(w.wind_values)
 
@@ -56,40 +56,13 @@ class WindField:
 
     @property
     def is_initialized(self) -> bool:
-        return len(self.wind) > 0
+        return len(self.winds) > 0
 
-    def get_coherence_function(self):
-        N = self.params.n_samples
-        Ts = self.params.sample_time
-
-        freq = np.arange(0, 1 / Ts, 1 / (Ts * N))
-        coherence_function = np.zeros(shape=(N,))
-
-        coherence_function[: N // 2] = self.coherence_kernel(freq[: N // 2])
-        coherence_function = np.pad(
-            coherence_function[: N // 2], [0, N // 2], mode="reflect"
-        )
-        return freq, coherence_function
-
-    def _get_coherence_matrix(self, factor, distance_matrix):
-        return np.exp(-factor * distance_matrix)
-
-    def compute(self):
-        N = self.params.n_samples
-        n_points = len(self.locations)
-
-        spectrum = Spectrum(self.params)  # Spectre du signal de vent
-
-        # Definition des transformation de Fourier des seeds du vent en chaque point
-        X_jk = np.exp(
-            1.0j * np.random.uniform(0, 2 * np.pi, size=(n_points, spectrum.N_freq, 3))
-        )
-
-        profile = PowerProfile(self.params)
-        mean_u = profile(self.locations)
+    def get_coherence_matrix(self, locations, profile, spectrum):
+        mean_u = profile(locations)
         mean_u_jk = 0.5 * np.add.outer(mean_u.ravel(), mean_u.ravel())
 
-        delta_r_jk = self.locations.get_distance_matrix()
+        delta_r_jk = locations.get_distance_matrix()
 
         C = 7.5
 
@@ -97,36 +70,59 @@ class WindField:
 
         Coh_jk = np.exp(-cru_jk[:, :, np.newaxis] * spectrum.freq)
 
-        # Multiplication par la matrice de coherence
+        return Coh_jk
 
-        distance_matrix = (
-            self.locations.get_distance_matrix()
-        )  # store a distance matrix
-        _, coherence_function = self.get_coherence_function()
-        for i in tqdm(range(N)):
-            coherence_matrix = self._get_coherence_matrix(
-                coherence_function[i], distance_matrix
-            )
-            L = np.linalg.cholesky(coherence_matrix)
-            fft_seed[:, i, :] = np.dot(L, fft_seed[:, i, :])
+    def compute(self):
+        N = self.params.n_samples
+        dt = self.params.sample_time
+        n_points = len(self.locations)
+
+        profile = PowerProfile(self.params)  # Profil des vitesses
+        spectrum = Spectrum(self.params)  # Spectre du signal de vent
+        Sf = spectrum.compute(self.locations)
+
+        Coh_jk = self.get_coherence_matrix(self.locations, profile, spectrum)
+
+        Sf_jk = (
+            np.sqrt(Sf[:, np.newaxis, :, :] * Sf[np.newaxis, :, :, :])
+            * Coh_jk[:, :, :, np.newaxis]
+        )
+
+        transposed = np.transpose(Sf_jk, axes=(3, 2, 1, 0))
+        L = np.linalg.cholesky(transposed)
+
+        one = np.ones(shape=(n_points, 1))
+        hx1 = np.zeros(shape=(spectrum.N_freq, n_points, 3), dtype=np.complex128)
+        for j in range(3):
+            for i_f in range(spectrum.N_freq):
+                vec = np.exp(1.0j * np.random.uniform(0, 2 * np.pi, size=n_points))
+                X = np.diag(vec)
+                hx1[i_f, :, j] = np.dot(np.dot(L[j, i_f, :, :], X), one).squeeze(1)
+
+        full = np.vstack(
+            [
+                np.zeros(shape=(1, n_points, 3)),
+                hx1[:-1, :, :],
+                np.real(hx1[-1:, :, :]),
+                np.conjugate(hx1[-2::-1, :, :]),
+            ]
+        )
+
+        u = np.real(np.fft.ifft(full, axis=0)) * np.sqrt(spectrum.N_freq / dt)
 
         for i_pt in range(n_points):
-            pt = self.locations.points[i_pt]
             wind = Wind(self.params)
+            mean_u = profile(self.locations)
             wind.wind_mean = np.array(
                 [
-                    self.params.wind_mean
-                    * (
-                        (self.params.reference_height + pt[1])
-                        / self.params.reference_height
-                    )
-                    ** (self.params.vertical_shear),
+                    mean_u[i_pt],
                     0,
                     0,
                 ]
             )
-            wind.compute(fft_seed=fft_seed[i_pt, :, :], spectrum=spectrum)
-            self.wind.append(wind)
+
+            wind.wind_values = u[:, i_pt, :] + wind.wind_mean[np.newaxis, :]
+            self.winds.append(wind)
 
     def __repr__(self):
         s = "<{} object> with keys:\n".format(type(self).__name__)

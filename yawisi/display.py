@@ -93,7 +93,7 @@ def display_field(wind_field: WindField):
         i = 0
         while i < len(wind_field.locations):
             pt = wind_field.locations.points[i]
-            wind: Wind = wind_field.wind[i]
+            wind: Wind = wind_field.winds[i]
             ax2.plot(
                 Time,
                 wind.wind_values[:, 0],

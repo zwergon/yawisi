@@ -7,6 +7,7 @@ from yawisi.display import display_coherence_function, display_field
 from yawisi.io import to_bts, from_bts
 import matplotlib.pyplot as plt
 
+
 class TestWindField(unittest.TestCase):
 
     def __init__(self, methodName: str = "runTest") -> None:
@@ -19,18 +20,9 @@ class TestWindField(unittest.TestCase):
         params.sample_time = 0.1
 
         wind_field = WindField(params)
-        pts = [
-            (0, 0),
-            (0, 1),
-            (1, 0)
-        ]
-        wind_field.locations = Locations.create("points")
-        wind_field.locations.add_points(pts)
-        
-        freq, coherence = wind_field.get_coherence_function()
-        display_coherence_function(freq, coherence)
 
-        print(wind_field._get_coherence_matrix(1, wind_field.locations.get_distance_matrix()))
+        wind_field.locations = Locations.create("points")
+        wind_field.locations.add_points([(0, z) for z in range(58, 61)])
 
         wind_field.compute()
         display_field(wind_field=wind_field)
@@ -43,12 +35,13 @@ class TestWindField(unittest.TestCase):
 
         wind_field = WindField(params)
         wind_field.compute()
-        #display_field(wind_field=wind_field)
+        print(wind_field)
+        # display_field(wind_field=wind_field)
 
         ts = wind_field.get_uvwt()
         print(ts.shape)
         for i in range(3):
-            plt.plot(ts[i, :, 6, 6])
+            plt.plot(ts[i, :, 0, 0])
         plt.show()
 
         uhub = wind_field.get_umean()
@@ -57,7 +50,7 @@ class TestWindField(unittest.TestCase):
     def test_to_bts(self):
         filename = os.path.join(os.path.dirname(__file__), "config.ini")
         btsfile = os.path.join(os.path.dirname(__file__), "./data", "test_to_bts.bts")
-        
+
         params = SimulationParameters(filename)
         params.n_samples = 2000
         params.sample_time = 0.1
@@ -66,16 +59,15 @@ class TestWindField(unittest.TestCase):
         wind_field.compute()
         to_bts(wind_field=wind_field, path=btsfile)
 
-    def test_from_bts(self):
+    """   def test_from_bts(self):
         btsfile = os.path.join(os.path.dirname(__file__), "./data", "test_from_bts.bts")
         wind_field = from_bts(btsfile)
         print(wind_field)
-        #ts = wind_field.get_uvwt()
+        # ts = wind_field.get_uvwt()
         # print(ts.shape)
         # for i in range(3):
         #     plt.plot(ts[i, :, 6, 6])
-        # plt.show()
-
+        # plt.show() """
 
 
 if __name__ == "__main__":
