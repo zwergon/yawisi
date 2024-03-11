@@ -70,7 +70,7 @@ class Grid(Locations):
         for i in range(self.dims[0]):
             for j in range(self.dims[1]):
                 self.points[self._index(i, j), 0] = y[i]
-                self.points[self._index(i, j), 1] = z[i]
+                self.points[self._index(i, j), 1] = z[j]
 
     def _make_points(self):
         self.points = np.zeros(shape=(self.dims[0] * self.dims[1], 2), dtype=np.float64)

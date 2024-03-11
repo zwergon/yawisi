@@ -2,7 +2,7 @@ from yawisi.parameters import SimulationParameters
 from yawisi.locations import Locations
 
 
-class Profile:
+class Law:
     def __init__(self, params: SimulationParameters):
         self.params = params
 
@@ -10,7 +10,7 @@ class Profile:
         pass
 
 
-class PowerProfile(Profile):
+class PowerLaw(Law):
     def __init__(self, params: SimulationParameters):
         super().__init__(params)
         self.a = 0.15  # Power law coefficient
@@ -20,3 +20,15 @@ class PowerProfile(Profile):
             self.params.wind_mean
             * (locations.z_array() / self.params.reference_height) ** self.a
         )
+
+
+class Profile:
+    """
+    This class defines the profile in z of the wind
+    """
+
+    def __init__(self, params: SimulationParameters):
+        self.law = PowerLaw(params)
+
+    def __call__(self, locations: Locations):
+        return self.law(locations=locations)

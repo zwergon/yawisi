@@ -15,7 +15,6 @@ class Wind:
     def __init__(self, params: SimulationParameters):
         # initialisation des seeds a  0 et du vent a 0
         self.params = params
-        self.wind_mean = np.array([self.params.wind_mean, 0, 0])
         self.wind_values = np.zeros(shape=(params.n_samples, 3))
 
     def AddGust(self, Gust, GustTime):
@@ -55,8 +54,11 @@ class Wind:
                 np.conjugate(filtered[-2::-1, :]),
             ]
         )
+
+        u_mean = np.array([self.params.wind_mean, 0, 0])
+
         self.wind_values = (
             np.real(np.fft.ifft(full, axis=0))
             * np.sqrt(spectrum.N_freq / self.params.sample_time)
-            + self.wind_mean
+            + u_mean
         )

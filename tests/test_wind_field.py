@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 
 
 class TestWindField(unittest.TestCase):
-
     def __init__(self, methodName: str = "runTest") -> None:
         super().__init__(methodName)
 
@@ -59,15 +58,19 @@ class TestWindField(unittest.TestCase):
         wind_field.compute()
         to_bts(wind_field=wind_field, path=btsfile)
 
-    """   def test_from_bts(self):
+    def test_from_bts(self):
         btsfile = os.path.join(os.path.dirname(__file__), "./data", "test_from_bts.bts")
         wind_field = from_bts(btsfile)
         print(wind_field)
         # ts = wind_field.get_uvwt()
         # print(ts.shape)
         # for i in range(3):
-        #     plt.plot(ts[i, :, 6, 6])
-        # plt.show() """
+        #     plt.plot(ts[i, :, 0, 0])
+        # plt.show()
+
+        btsfile = os.path.join(os.path.dirname(__file__), "./data", "test_from_1y.bts")
+        wind_field = from_bts(btsfile)
+        print(wind_field)
 
 
 if __name__ == "__main__":

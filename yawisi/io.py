@@ -142,9 +142,12 @@ def from_bts(filename, tdecimals=8) -> WindField:
     z = np.arange(nz) * dz + zBottom
 
     params = SimulationParameters(None)
-    params.grid_height = z[-1] - z[0]
-    params.grid_width = y[-1] - y[0]
-    params.grid_length = int(y.shape[0])
+    params.ny = y.shape[0]
+    params.nz = z.shape[0]
+    params.ymin = y[0]
+    params.ymax = y[-1]
+    params.zmin = z[0]
+    params.zmax = z[-1]
     params.wind_mean = uHub
     params.n_samples = nt
     params.sample_time = np.round(

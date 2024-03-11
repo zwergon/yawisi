@@ -2,9 +2,10 @@ import numpy as np
 from yawisi.parameters import SimulationParameters
 from yawisi.spectrum import Spectrum
 from yawisi.locations import Locations, Grid
-from yawisi.kernels import CoherenceKernel
-from yawisi.profile import PowerProfile
+from yawisi.profile import Profile
 from yawisi.wind import Wind
+from yawisi.coherence import Coherence
+
 from tqdm import tqdm
 
 
@@ -58,30 +59,16 @@ class WindField:
     def is_initialized(self) -> bool:
         return len(self.winds) > 0
 
-    def get_coherence_matrix(self, locations, profile, spectrum):
-        mean_u = profile(locations)
-        mean_u_jk = 0.5 * np.add.outer(mean_u.ravel(), mean_u.ravel())
-
-        delta_r_jk = locations.get_distance_matrix()
-
-        C = 7.5
-
-        cru_jk = C * delta_r_jk / mean_u_jk
-
-        Coh_jk = np.exp(-cru_jk[:, :, np.newaxis] * spectrum.freq)
-
-        return Coh_jk
-
     def compute(self):
         N = self.params.n_samples
         dt = self.params.sample_time
         n_points = len(self.locations)
 
-        profile = PowerProfile(self.params)  # Profil des vitesses
         spectrum = Spectrum(self.params)  # Spectre du signal de vent
         Sf = spectrum.compute(self.locations)
 
-        Coh_jk = self.get_coherence_matrix(self.locations, profile, spectrum)
+        coherence = Coherence(self.params)
+        Coh_jk = coherence.compute(self.locations, spectrum)
 
         Sf_jk = (
             np.sqrt(Sf[:, np.newaxis, :, :] * Sf[np.newaxis, :, :, :])
@@ -110,10 +97,11 @@ class WindField:
 
         u = np.real(np.fft.ifft(full, axis=0)) * np.sqrt(spectrum.N_freq / dt)
 
+        profile = Profile(self.params)
         for i_pt in range(n_points):
             wind = Wind(self.params)
             mean_u = profile(self.locations)
-            wind.wind_mean = np.array(
+            wind_mean = np.array(
                 [
                     mean_u[i_pt],
                     0,
@@ -121,7 +109,7 @@ class WindField:
                 ]
             )
 
-            wind.wind_values = u[:, i_pt, :] + wind.wind_mean[np.newaxis, :]
+            wind.wind_values = u[:, i_pt, :] + wind_mean[np.newaxis, :]
             self.winds.append(wind)
 
     def __repr__(self):
